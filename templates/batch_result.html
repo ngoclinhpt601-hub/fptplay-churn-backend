@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Kết Quả Batch - FPTPlay{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header">
+                <h2 class="page-title">
+                    <i class="fas fa-chart-pie text-primary"></i>
+                    Kết Quả Dự Đoán Hàng Loạt
+                </h2>
+                <p class="page-description">
+                    Phân tích chi tiết {{ stats.total }} khách hàng
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card bg-primary text-white">
+                <div class="stat-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ stats.total }}</h3>
+                    <p>Tổng Khách Hàng</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="stat-card bg-danger text-white">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ stats.churn_count }}</h3>
+                    <p>Dự Đoán Churn</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="stat-card bg-success text-white">
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ stats.no_churn_count }}</h3>
+                    <p>Không Churn</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="stat-card bg-warning text-dark">
+                <div class="stat-icon">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ stats.churn_rate }}</h3>
+                    <p>Tỷ Lệ Churn</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Risk Distribution -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie"></i>
+                        Phân Bố Mức Độ Rủi Ro
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="riskDistChart" height="250"></canvas>
+                    <div class="risk-stats mt-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="fas fa-circle text-danger"></i> High Risk:</span>
+                            <strong>{{ stats.high_risk }} khách</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="fas fa-circle text-warning"></i> Medium Risk:</span>
+                            <strong>{{ stats.medium_risk }} khách</strong>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span><i class="fas fa-circle text-success"></i> Low Risk:</span>
+                            <strong>{{ stats.low_risk }} khách</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        Thống Kê Tổng Quan
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="stat-item">
+                        <i class="fas fa-chart-line text-primary"></i>
+                        <strong>Xác suất trung bình:</strong>
+                        <span class="float-end">{{ stats.avg_probability }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-user-times text-danger"></i>
+                        <strong>Số khách cần can thiệp:</strong>
+                        <span class="float-end">{{ stats.churn_count }} khách</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-dollar-sign text-success"></i>
+                        <strong>Chi phí can thiệp dự kiến:</strong>
+                        <span class="float-end">${{ stats.churn_count * 15 }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-coins text-warning"></i>
+                        <strong>Giá trị tiềm năng giữ chân:</strong>
+                        <span class="float-end">${{ (stats.churn_count * 89.85) | round | int }}</span>
+                    </div>
+                    <div class="stat-item border-top pt-3">
+                        <i class="fas fa-chart-pie text-info"></i>
+                        <strong>ROI dự kiến (60% success):</strong>
+                        <span class="float-end text-success">
+                            {% set roi = ((stats.churn_count * 89.85 * 0.6) - (stats.churn_count * 15)) / (stats.churn_count * 15) * 100 %}
+                            {{ "%.1f"|format(roi) }}%
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Results Table -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-table"></i>
+                        Chi Tiết Kết Quả (50 khách đầu tiên)
+                    </h5>
+                    <div>
+                        <a href="{{ url_for('export', format='csv') }}" class="btn btn-success btn-sm">
+                            <i class="fas fa-file-csv"></i>
+                            Export CSV
+                        </a>
+                        <a href="{{ url_for('export', format='json') }}" class="btn btn-info btn-sm">
+                            <i class="fas fa-file-code"></i>
+                            Export JSON
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm" id="resultsTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Hours M1</th>
+                                    <th>Tenure</th>
+                                    <th>Device</th>
+                                    <th>Plan</th>
+                                    <th>Dự Đoán</th>
+                                    <th>Xác Suất</th>
+                                    <th>Risk Level</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i, row in enumerate(results, 1) %}
+                                <tr>
+                                    <td>{{ i }}</td>
+                                    <td>{{ "%.1f"|format(row.hours_m1) }}</td>
+                                    <td>{{ row.tenure_months }}</td>
+                                    <td><span class="badge bg-info">{{ row.device_type }}</span></td>
+                                    <td><span class="badge bg-primary">{{ row.plan_type }}</span></td>
+                                    <td>
+                                        {% if row.churn_prediction == 'YES' %}
+                                            <span class="badge bg-danger">CHURN</span>
+                                        {% else %}
+                                            <span class="badge bg-success">NO CHURN</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ row.churn_probability_pct }}</td>
+                                    <td>
+                                        {% if row.risk_level == 'HIGH' %}
+                                            <span class="badge bg-danger">HIGH</span>
+                                        {% elif row.risk_level == 'MEDIUM' %}
+                                            <span class="badge bg-warning text-dark">MEDIUM</span>
+                                        {% else %}
+                                            <span class="badge bg-success">LOW</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    {% if results|length >= 50 %}
+                    <div class="alert alert-info mt-3 mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        Hiển thị 50 khách hàng đầu tiên. Export file để xem toàn bộ kết quả.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="row">
+        <div class="col-12 text-center">
+            <a href="{{ url_for('batch_upload') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-upload"></i>
+                Upload File Khác
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary btn-lg">
+                <i class="fas fa-chart-bar"></i>
+                Xem Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Risk Distribution Chart
+const ctx = document.getElementById('riskDistChart').getContext('2d');
+new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+        datasets: [{
+            data: [{{ stats.high_risk }}, {{ stats.medium_risk }}, {{ stats.low_risk }}],
+            backgroundColor: [
+                'rgba(198, 40, 40, 0.8)',
+                'rgba(245, 124, 0, 0.8)',
+                'rgba(46, 125, 50, 0.8)'
+            ],
+            borderColor: [
+                'rgba(198, 40, 40, 1)',
+                'rgba(245, 124, 0, 1)',
+                'rgba(46, 125, 50, 1)'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

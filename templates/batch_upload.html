@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Upload CSV - FPTPlay{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header">
+                <h2 class="page-title">
+                    <i class="fas fa-upload text-primary"></i>
+                    Dự Đoán Hàng Loạt (Batch)
+                </h2>
+                <p class="page-description">
+                    Upload file CSV chứa thông tin nhiều khách hàng để dự đoán churn hàng loạt
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upload Card -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-csv"></i>
+                        Upload File CSV
+                    </h5>
+                </div>
+                
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('batch_upload') }}" enctype="multipart/form-data" id="uploadForm">
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt fa-4x text-primary"></i>
+                            </div>
+                            <h5 class="mt-3">Kéo thả file CSV vào đây</h5>
+                            <p class="text-muted">hoặc</p>
+                            <label for="fileInput" class="btn btn-primary">
+                                <i class="fas fa-folder-open"></i>
+                                Chọn File
+                            </label>
+                            <input type="file" class="d-none" id="fileInput" name="file" accept=".csv" required>
+                            <p class="text-muted mt-3 mb-0">
+                                <small>Kích thước tối đa: 10MB | Định dạng: CSV</small>
+                            </p>
+                        </div>
+                        
+                        <div id="fileInfo" class="mt-3" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="fas fa-file"></i>
+                                <strong>File đã chọn:</strong> <span id="fileName"></span>
+                                <span class="badge bg-primary ms-2" id="fileSize"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-success btn-lg px-5" id="submitBtn">
+                                <i class="fas fa-paper-plane"></i>
+                                Upload và Dự Đoán
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- CSV Format Guide -->
+    <div class="row mt-4">
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        Định Dạng File CSV Yêu Cầu
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>Các cột bắt buộc:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tên Cột</th>
+                                    <th>Kiểu Dữ Liệu</th>
+                                    <th>Mô Tả</th>
+                                    <th>Ví Dụ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>hours_m1</code></td>
+                                    <td>Float</td>
+                                    <td>Giờ xem tháng 1 (gần nhất)</td>
+                                    <td>8.5</td>
+                                </tr>
+                                <tr>
+                                    <td><code>hours_m2</code></td>
+                                    <td>Float</td>
+                                    <td>Giờ xem tháng 2</td>
+                                    <td>12.0</td>
+                                </tr>
+                                <tr>
+                                    <td><code>hours_m3</code></td>
+                                    <td>Float</td>
+                                    <td>Giờ xem tháng 3</td>
+                                    <td>15.0</td>
+                                </tr>
+                                <tr>
+                                    <td><code>hours_m4</code></td>
+                                    <td>Float</td>
+                                    <td>Giờ xem tháng 4</td>
+                                    <td>17.0</td>
+                                </tr>
+                                <tr>
+                                    <td><code>hours_m5</code></td>
+                                    <td>Float</td>
+                                    <td>Giờ xem tháng 5</td>
+                                    <td>18.5</td>
+                                </tr>
+                                <tr>
+                                    <td><code>hours_m6</code></td>
+                                    <td>Float</td>
+                                    <td>Giờ xem tháng 6</td>
+                                    <td>20.0</td>
+                                </tr>
+                                <tr>
+                                    <td><code>tenure_months</code></td>
+                                    <td>Integer</td>
+                                    <td>Thời gian sử dụng (tháng)</td>
+                                    <td>24</td>
+                                </tr>
+                                <tr>
+                                    <td><code>is_promo_subscriber</code></td>
+                                    <td>Integer (0/1)</td>
+                                    <td>Có khuyến mãi</td>
+                                    <td>0 hoặc 1</td>
+                                </tr>
+                                <tr>
+                                    <td><code>device_type</code></td>
+                                    <td>String</td>
+                                    <td>Loại thiết bị</td>
+                                    <td>mobile, tv, web</td>
+                                </tr>
+                                <tr>
+                                    <td><code>plan_type</code></td>
+                                    <td>String</td>
+                                    <td>Gói dịch vụ</td>
+                                    <td>basic, standard, premium</td>
+                                </tr>
+                                <tr>
+                                    <td><code>region</code></td>
+                                    <td>String</td>
+                                    <td>Khu vực</td>
+                                    <td>north, central, south</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <h6 class="mt-3">Ví dụ CSV:</h6>
+                    <pre class="bg-light p-3 rounded"><code>hours_m1,hours_m2,hours_m3,hours_m4,hours_m5,hours_m6,tenure_months,is_promo_subscriber,device_type,plan_type,region
+8.5,12.0,15.0,17.0,18.5,20.0,24,0,mobile,basic,south
+25.0,24.5,23.8,22.0,21.5,20.0,36,1,tv,premium,north</code></pre>
+                    
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Lưu ý:</strong> File CSV phải có dòng header (tên cột) ở dòng đầu tiên. Các cột có thể ở thứ tự bất kỳ.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// File upload handling
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+const fileInfo = document.getElementById('fileInfo');
+const fileName = document.getElementById('fileName');
+const fileSize = document.getElementById('fileSize');
+
+// Drag and drop
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        fileInput.files = files;
+        showFileInfo(files[0]);
+    }
+});
+
+// File selection
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        showFileInfo(e.target.files[0]);
+    }
+});
+
+function showFileInfo(file) {
+    fileName.textContent = file.name;
+    fileSize.textContent = formatFileSize(file.size);
+    fileInfo.style.display = 'block';
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+    else return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+</script>
+{% endblock %}

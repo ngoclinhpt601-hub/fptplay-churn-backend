@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block title %}Dự Đoán Churn - FPTPlay{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header">
+                <h2 class="page-title">
+                    <i class="fas fa-user-check text-primary"></i>
+                    Dự Đoán Churn Khách Hàng
+                </h2>
+                <p class="page-description">
+                    Nhập thông tin khách hàng để dự đoán khả năng churn và đưa ra khuyến nghị phù hợp
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Info Cards -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="info-card">
+                <div class="info-icon bg-primary">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="info-content">
+                    <h6>Mô Hình AI</h6>
+                    <p>Random Forest với 19 features</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="info-card">
+                <div class="info-icon bg-success">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="info-content">
+                    <h6>Độ Chính Xác</h6>
+                    <p>~85% accuracy trên test set</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="info-card">
+                <div class="info-icon bg-warning">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="info-content">
+                    <h6>Thời Gian Dự Đoán</h6>
+                    <p>< 1 giây cho mỗi khách hàng</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Prediction Form -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit"></i>
+                        Thông Tin Khách Hàng
+                    </h5>
+                </div>
+                
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('predict') }}" id="predictionForm">
+                        <!-- Viewing Hours Section -->
+                        <div class="form-section">
+                            <h6 class="section-title">
+                                <i class="fas fa-tv"></i>
+                                Lịch Sử Xem (6 Tháng Gần Nhất)
+                            </h6>
+                            
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Giờ xem tháng 6 <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="hours_m6" 
+                                               required min="0" max="500" step="0.1" value="20.0">
+                                        <span class="input-group-text">giờ</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Giờ xem tháng 5 <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="hours_m5" 
+                                               required min="0" max="500" step="0.1" value="18.5">
+                                        <span class="input-group-text">giờ</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Giờ xem tháng 4 <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="hours_m4" 
+                                               required min="0" max="500" step="0.1" value="17.0">
+                                        <span class="input-group-text">giờ</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Giờ xem tháng 3 <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="hours_m3" 
+                                               required min="0" max="500" step="0.1" value="15.0">
+                                        <span class="input-group-text">giờ</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Giờ xem tháng 2 <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="hours_m2" 
+                                               required min="0" max="500" step="0.1" value="12.0">
+                                        <span class="input-group-text">giờ</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Giờ xem tháng 1 (Gần nhất) <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" name="hours_m1" 
+                                               required min="0" max="500" step="0.1" value="8.0">
+                                        <span class="input-group-text">giờ</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Customer Info Section -->
+                        <div class="form-section">
+                            <h6 class="section-title">
+                                <i class="fas fa-user"></i>
+                                Thông Tin Khách Hàng
+                            </h6>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Thời gian sử dụng (tháng) <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" name="tenure_months" 
+                                           required min="1" value="24">
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Khuyến mãi <span class="text-danger">*</span></label>
+                                    <select class="form-select" name="is_promo_subscriber" required>
+                                        <option value="0" selected>Không có khuyến mãi</option>
+                                        <option value="1">Có khuyến mãi</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Thiết bị sử dụng <span class="text-danger">*</span></label>
+                                    <select class="form-select" name="device_type" required>
+                                        <option value="mobile" selected>Mobile</option>
+                                        <option value="tv">TV</option>
+                                        <option value="web">Web</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Gói dịch vụ <span class="text-danger">*</span></label>
+                                    <select class="form-select" name="plan_type" required>
+                                        <option value="basic" selected>Basic</option>
+                                        <option value="standard">Standard</option>
+                                        <option value="premium">Premium</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Khu vực <span class="text-danger">*</span></label>
+                                    <select class="form-select" name="region" required>
+                                        <option value="north">Miền Bắc</option>
+                                        <option value="central">Miền Trung</option>
+                                        <option value="south" selected>Miền Nam</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg px-5">
+                                <i class="fas fa-magic"></i>
+                                Dự Đoán Churn
+                            </button>
+                            <button type="reset" class="btn btn-outline-secondary btn-lg px-5 ms-2">
+                                <i class="fas fa-redo"></i>
+                                Đặt Lại
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Guide -->
+    <div class="row mt-4">
+        <div class="col-lg-8 mx-auto">
+            <div class="card border-info">
+                <div class="card-body">
+                    <h6 class="text-info">
+                        <i class="fas fa-lightbulb"></i>
+                        Hướng Dẫn Sử Dụng
+                    </h6>
+                    <ul class="mb-0">
+                        <li><strong>Giờ xem:</strong> Nhập số giờ xem phim của khách hàng trong 6 tháng gần nhất (tháng 1 là gần nhất)</li>
+                        <li><strong>Thời gian sử dụng:</strong> Số tháng khách hàng đã sử dụng dịch vụ (≥ 1 tháng)</li>
+                        <li><strong>Khuyến mãi:</strong> Khách hàng có đang hưởng gói khuyến mãi không</li>
+                        <li><strong>Thiết bị:</strong> Thiết bị chính mà khách hàng sử dụng để xem</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

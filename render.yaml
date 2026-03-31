@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: fptplay-churn-api
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --workers 2 --bind 0.0.0.0:$PORT app:app --timeout 120
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DEBUG
+        value: false
+      - key: MODEL_PATH
+        value: ./best_model_random_forest.pkl
+    healthCheckPath: /api/health

@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - FPTPlay{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header">
+                <h2 class="page-title">
+                    <i class="fas fa-chart-bar text-primary"></i>
+                    Dashboard Tổng Quan
+                </h2>
+                <p class="page-description">
+                    Thống kê và phân tích tổng quan về dự đoán churn
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- KPI Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="kpi-card bg-gradient-primary">
+                <div class="kpi-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="kpi-content">
+                    <h6>Tổng Dự Đoán</h6>
+                    <h2>{{ stats.total_predictions }}</h2>
+                    <p class="mb-0"><small>Khách hàng đã phân tích</small></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="kpi-card bg-gradient-danger">
+                <div class="kpi-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="kpi-content">
+                    <h6>Tỷ Lệ Churn</h6>
+                    <h2>{{ stats.churn_rate }}</h2>
+                    <p class="mb-0"><small>{{ stats.churn_count }} / {{ stats.total_predictions }} khách</small></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="kpi-card bg-gradient-warning">
+                <div class="kpi-icon">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="kpi-content">
+                    <h6>Xác Suất TB</h6>
+                    <h2>{{ stats.avg_probability }}</h2>
+                    <p class="mb-0"><small>Churn probability trung bình</small></p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="kpi-card bg-gradient-info">
+                <div class="kpi-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="kpi-content">
+                    <h6>High Risk</h6>
+                    <h2>{{ stats.high_risk }}</h2>
+                    <p class="mb-0"><small>Cần can thiệp ngay</small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Churn Distribution -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-pie-chart"></i>
+                        Phân Bố Churn
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="churnDistChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Risk Level Distribution -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i>
+                        Phân Bố Mức Độ Rủi Ro
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="riskLevelChart" height="250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Predictions -->
+    {% if recent_predictions|length > 0 %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i>
+                        Dự Đoán Gần Đây (10 Gần Nhất)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Thời Gian</th>
+                                    <th>Hours M1</th>
+                                    <th>Tenure</th>
+                                    <th>Device</th>
+                                    <th>Dự Đoán</th>
+                                    <th>Xác Suất</th>
+                                    <th>Risk Level</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pred in recent_predictions %}
+                                <tr>
+                                    <td>{{ pred.timestamp[:19].replace('T', ' ') }}</td>
+                                    <td>{{ "%.1f"|format(pred.customer_data.hours_m1) }}</td>
+                                    <td>{{ pred.customer_data.tenure_months }}</td>
+                                    <td><span class="badge bg-info">{{ pred.customer_data.device_type }}</span></td>
+                                    <td>
+                                        {% if pred.result.churn_prediction == 'YES' %}
+                                            <span class="badge bg-danger">CHURN</span>
+                                        {% else %}
+                                            <span class="badge bg-success">NO CHURN</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ pred.result.churn_probability_pct }}</td>
+                                    <td>
+                                        {% if pred.result.risk_level == 'HIGH' %}
+                                            <span class="badge bg-danger">HIGH</span>
+                                        {% elif pred.result.risk_level == 'MEDIUM' %}
+                                            <span class="badge bg-warning text-dark">MEDIUM</span>
+                                        {% else %}
+                                            <span class="badge bg-success">LOW</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Business Metrics -->
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="card border-danger h-100">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="fas fa-dollar-sign"></i> Chi Phí Can Thiệp</h6>
+                </div>
+                <div class="card-body text-center">
+                    <h3 class="text-danger">${{ stats.churn_count * 15 }}</h3>
+                    <p class="text-muted mb-0">{{ stats.churn_count }} khách × $15/khách</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-success h-100">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-coins"></i> Giá Trị Giữ Chân</h6>
+                </div>
+                <div class="card-body text-center">
+                    <h3 class="text-success">${{ (stats.churn_count * 89.85 * 0.6) | round | int }}</h3>
+                    <p class="text-muted mb-0">60% success × $89.85 CLV</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card border-info h-100">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-chart-line"></i> ROI Dự Kiến</h6>
+                </div>
+                <div class="card-body text-center">
+                    {% set roi = ((stats.churn_count * 89.85 * 0.6) - (stats.churn_count * 15)) / (stats.churn_count * 15 + 0.01) * 100 %}
+                    <h3 class="text-info">{{ "%.1f"|format(roi) }}%</h3>
+                    <p class="text-muted mb-0">Return on Investment</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Churn Distribution Chart
+const churnCtx = document.getElementById('churnDistChart').getContext('2d');
+new Chart(churnCtx, {
+    type: 'pie',
+    data: {
+        labels: ['Churn', 'No Churn'],
+        datasets: [{
+            data: [{{ stats.churn_count }}, {{ stats.no_churn_count }}],
+            backgroundColor: [
+                'rgba(198, 40, 40, 0.8)',
+                'rgba(46, 125, 50, 0.8)'
+            ],
+            borderColor: [
+                'rgba(198, 40, 40, 1)',
+                'rgba(46, 125, 50, 1)'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Risk Level Chart
+const riskCtx = document.getElementById('riskLevelChart').getContext('2d');
+new Chart(riskCtx, {
+    type: 'bar',
+    data: {
+        labels: ['High Risk', 'Medium Risk', 'Low Risk'],
+        datasets: [{
+            label: 'Số lượng khách hàng',
+            data: [{{ stats.high_risk }}, {{ stats.medium_risk }}, {{ stats.low_risk }}],
+            backgroundColor: [
+                'rgba(198, 40, 40, 0.8)',
+                'rgba(245, 124, 0, 0.8)',
+                'rgba(46, 125, 50, 0.8)'
+            ],
+            borderColor: [
+                'rgba(198, 40, 40, 1)',
+                'rgba(245, 124, 0, 1)',
+                'rgba(46, 125, 50, 1)'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

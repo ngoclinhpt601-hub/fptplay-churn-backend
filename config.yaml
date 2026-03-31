@@ -1,0 +1,73 @@
+# FPTPlay Churn Prediction Web App Configuration
+
+app:
+  name: "FPTPlay Churn Prediction System"
+  version: "1.0.0"
+  company: "FPT Telecom"
+  port: 5000
+  secret_key: "your-secret-key-change-in-production"
+  debug: false
+
+model:
+  model_path: "./best_model_random_forest.pkl"  # Model file trong cùng thư mục
+  model_name: "Random Forest Classifier"
+  n_features: 19
+
+upload:
+  upload_folder: "uploads"
+  max_file_size_mb: 10
+  allowed_extensions: 
+    - "csv"
+
+thresholds:
+  high_risk: 0.7
+  medium_risk: 0.4
+  low_risk: 0.0
+
+features:
+  required:
+    - "hours_m1"
+    - "hours_m2"
+    - "hours_m3"
+    - "hours_m4"
+    - "hours_m5"
+    - "hours_m6"
+    - "tenure_months"
+    - "is_promo_subscriber"
+    - "device_type"
+    - "plan_type"
+    - "region"
+  
+  categorical:
+    device_type:
+      - "mobile"
+      - "tv"
+      - "web"
+    plan_type:
+      - "basic"
+      - "standard"
+      - "premium"
+    region:
+      - "north"
+      - "central"
+      - "south"
+
+ui:
+  theme:
+    primary_color: "#1976d2"
+    secondary_color: "#f57c00"
+    success_color: "#2e7d32"
+    warning_color: "#f57c00"
+    danger_color: "#c62828"
+  
+  brand:
+    logo_text: "FPT"
+    company_name: "FPT Telecom"
+    app_title: "Churn Prediction"
+
+business:
+  intervention_cost: 15  # USD per customer
+  avg_revenue_per_month: 10  # USD
+  customer_lifetime_months: 24
+  discount_rate: 0.1
+  success_rate: 0.6  # 60% intervention success rate
