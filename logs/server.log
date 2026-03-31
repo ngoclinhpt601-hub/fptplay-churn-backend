@@ -1,0 +1,26 @@
+2026-03-31 16:10:53,823 - utils.model_loader - INFO - Loading model from: ./best_model_random_forest.pkl
+/local_disk0/.ephemeral_nfs/envs/pythonEnv-536b9a70-78c7-492c-b4cd-99c99261cb72/lib/python3.12/site-packages/sklearn/base.py:348: InconsistentVersionWarning: Trying to unpickle estimator DecisionTreeClassifier from version 1.3.0 when using version 1.3.2. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+/local_disk0/.ephemeral_nfs/envs/pythonEnv-536b9a70-78c7-492c-b4cd-99c99261cb72/lib/python3.12/site-packages/sklearn/base.py:348: InconsistentVersionWarning: Trying to unpickle estimator RandomForestClassifier from version 1.3.0 when using version 1.3.2. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+/local_disk0/.ephemeral_nfs/envs/pythonEnv-536b9a70-78c7-492c-b4cd-99c99261cb72/lib/python3.12/site-packages/sklearn/base.py:348: InconsistentVersionWarning: Trying to unpickle estimator StandardScaler from version 1.3.0 when using version 1.3.2. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+  warnings.warn(
+2026-03-31 16:10:54,362 - utils.model_loader - INFO - ✅ Model validation passed
+2026-03-31 16:10:54,363 - utils.model_loader - INFO - ✅ Model loaded successfully: Random Forest
+2026-03-31 16:10:54,363 - utils.model_loader - INFO -    Features: 19
+2026-03-31 16:10:54,363 - utils.model_loader - INFO -    Test Accuracy: 1.0000
+2026-03-31 16:10:54,363 - __main__ - INFO - ✅ Model loaded successfully: Random Forest
+2026-03-31 16:10:54,364 - __main__ - INFO -    Features: 19 features
+2026-03-31 16:10:54,366 - __main__ - INFO - 🚀 Starting FPTPlay Churn Prediction App on port 5000
+2026-03-31 16:10:54,367 - __main__ - INFO -    Debug mode: False
+2026-03-31 16:10:54,367 - __main__ - INFO -    Model: Random Forest
+ * Serving Flask app 'app'
+ * Debug mode: off
+2026-03-31 16:10:54,490 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.210.116:5000
+2026-03-31 16:10:54,490 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
