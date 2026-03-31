@@ -1,0 +1,11 @@
+hours_m1,hours_m2,hours_m3,hours_m4,hours_m5,hours_m6,tenure_months,is_promo_subscriber,device_type,plan_type,region
+8.5,12.0,15.0,17.0,18.5,20.0,24,0,mobile,basic,south
+25.0,24.5,23.8,22.0,21.5,20.0,36,1,tv,premium,north
+5.0,6.5,8.0,10.0,15.0,18.0,12,0,web,standard,central
+30.5,28.0,26.5,25.0,24.0,23.5,48,1,tv,premium,south
+2.0,3.5,5.0,8.0,12.0,18.0,6,0,mobile,basic,north
+18.0,18.5,19.0,19.5,20.0,20.5,30,0,web,standard,south
+15.0,14.5,14.0,13.5,13.0,12.5,18,1,mobile,basic,central
+22.0,21.5,21.0,20.5,20.0,19.5,42,0,tv,standard,north
+10.0,12.0,14.0,16.0,18.0,20.0,24,1,web,basic,south
+28.0,27.5,27.0,26.5,26.0,25.5,60,1,tv,premium,north
