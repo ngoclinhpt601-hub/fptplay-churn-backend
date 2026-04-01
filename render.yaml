@@ -4,16 +4,13 @@ services:
     env: python
     region: singapore
     plan: free
-    buildCommand: |
-      pip install --upgrade pip
-      pip install setuptools wheel
-      pip install -r requirements.txt
+    buildCommand: pip install --upgrade pip && pip install --prefer-binary -r requirements.txt
     startCommand: gunicorn --workers 2 --bind 0.0.0.0:$PORT app:app --timeout 120
     envVars:
       - key: SECRET_KEY
         generateValue: true
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.10.13
       - key: DEBUG
         value: false
       - key: MODEL_PATH
