@@ -66,6 +66,7 @@ try:
     logger.info(f"   Features: {len(model_info['features'])} features")
 except Exception as e:
     logger.error(f"❌ Failed to load model: {str(e)}")
+    logger.error(traceback.format_exc())
     model_info = None
 
 # ========== GLOBAL VARIABLES ==========
@@ -94,6 +95,10 @@ def predict_single(customer_data):
         dict with prediction results
     """
     try:
+        # Check if model is loaded
+        if model_info is None:
+            raise Exception("Model chưa được load. Vui lòng kiểm tra logs.")
+        
         # Convert to DataFrame
         df = pd.DataFrame([customer_data])
         
@@ -153,6 +158,10 @@ def predict_batch(df):
         DataFrame with predictions
     """
     try:
+        # Check if model is loaded
+        if model_info is None:
+            raise Exception("Model chưa được load. Vui lòng kiểm tra logs.")
+        
         # Feature engineering
         df_eng = feature_engineering(df)
         
@@ -168,11 +177,13 @@ def predict_batch(df):
         df_result = df.copy()
         df_result['churn_prediction'] = ['YES' if p == 1 else 'NO' for p in predictions]
         df_result['churn_probability'] = probabilities
-        df_result['churn_probability_pct'] = [f"{p*100:.1f}%" for p in probabilities]
+        df_result['churn_probability_pct'] = [f"{p * 100:.1f}%" for p in probabilities]
         
-        # Calculate risk levels
-        risk_levels = [calculate_risk_level(p)[0] for p in probabilities]
-        df_result['risk_level'] = risk_levels
+        # Add risk levels
+        risk_data = [calculate_risk_level(p) for p in probabilities]
+        df_result['risk_level'] = [r[0] for r in risk_data]
+        df_result['risk_color'] = [r[1] for r in risk_data]
+        df_result['risk_message'] = [r[2] for r in risk_data]
         
         return df_result
         
@@ -181,17 +192,22 @@ def predict_batch(df):
         logger.error(traceback.format_exc())
         raise
 
-# ========== ROUTES ==========
+# ========== WEB ROUTES ==========
 
 @app.route('/')
 def index():
-    """Home page with prediction form"""
-    return render_template('index.html', config=config)
+    """Homepage with prediction form"""
+    return render_template('index.html', config=config, model_loaded=model_info is not None)
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    """Single customer prediction endpoint"""
+    """Handle single customer prediction"""
     try:
+        # Check if model is loaded
+        if model_info is None:
+            return render_template('error.html', 
+                                 error='Model chưa được load. Vui lòng kiểm tra cấu hình server.'), 500
+        
         # Get form data
         customer_data = {
             'hours_m1': float(request.form.get('hours_m1', 0)),
@@ -245,9 +261,13 @@ def predict():
 def batch_upload():
     """Batch prediction from CSV file"""
     if request.method == 'GET':
-        return render_template('batch_upload.html', config=config)
+        return render_template('batch_upload.html', config=config, model_loaded=model_info is not None)
     
     try:
+        # Check if model is loaded
+        if model_info is None:
+            return jsonify({'error': 'Model chưa được load'}), 500
+        
         # Check if file is present
         if 'file' not in request.files:
             return jsonify({'error': 'Không tìm thấy file'}), 400
@@ -299,49 +319,45 @@ def batch_upload():
     except Exception as e:
         logger.error(f"Error in /batch-upload: {str(e)}")
         logger.error(traceback.format_exc())
-        return render_template('error.html', error=str(e)), 500
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/dashboard')
 def dashboard():
-    """Dashboard with overall statistics"""
+    """Dashboard with statistics"""
     try:
         # Calculate statistics from history
-        if len(prediction_history) == 0:
+        if not prediction_history:
             stats = {
                 'total_predictions': 0,
-                'churn_rate': '0%',
-                'avg_probability': '0%',
+                'churn_count': 0,
+                'no_churn_count': 0,
+                'churn_rate': '0.0%',
+                'avg_probability': '0.0%',
                 'high_risk': 0,
                 'medium_risk': 0,
                 'low_risk': 0
             }
         else:
-            churn_count = sum(1 for h in prediction_history if h['result']['churn_prediction'] == 'YES')
-            total = len(prediction_history)
-            avg_prob = np.mean([h['result']['churn_probability'] for h in prediction_history])
-            
-            risk_counts = {'HIGH': 0, 'MEDIUM': 0, 'LOW': 0}
-            for h in prediction_history:
-                risk_counts[h['result']['risk_level']] += 1
+            results = [entry['result'] for entry in prediction_history]
+            churn_count = sum(1 for r in results if r['churn_prediction'] == 'YES')
+            total = len(results)
             
             stats = {
                 'total_predictions': total,
-                'churn_rate': f"{churn_count / total * 100:.1f}%",
-                'avg_probability': f"{avg_prob * 100:.1f}%",
-                'high_risk': risk_counts['HIGH'],
-                'medium_risk': risk_counts['MEDIUM'],
-                'low_risk': risk_counts['LOW'],
                 'churn_count': churn_count,
-                'no_churn_count': total - churn_count
+                'no_churn_count': total - churn_count,
+                'churn_rate': f"{churn_count / total * 100:.1f}%" if total > 0 else '0.0%',
+                'avg_probability': f"{sum(r['churn_probability'] for r in results) / total * 100:.1f}%" if total > 0 else '0.0%',
+                'high_risk': sum(1 for r in results if r['risk_level'] == 'HIGH'),
+                'medium_risk': sum(1 for r in results if r['risk_level'] == 'MEDIUM'),
+                'low_risk': sum(1 for r in results if r['risk_level'] == 'LOW')
             }
         
-        # Get recent predictions
-        recent = prediction_history[-10:][::-1]  # Last 10, reversed
-        
-        return render_template('dashboard.html',
+        return render_template('dashboard.html', 
                              stats=stats,
-                             recent_predictions=recent,
-                             config=config)
+                             history=prediction_history[-10:],  # Last 10 predictions
+                             config=config,
+                             model_loaded=model_info is not None)
         
     except Exception as e:
         logger.error(f"Error in /dashboard: {str(e)}")
@@ -349,41 +365,47 @@ def dashboard():
         return render_template('error.html', error=str(e)), 500
 
 @app.route('/export/<format>')
-def export(format):
-    """Export batch results"""
+def export_results(format):
+    """Export results to CSV or JSON"""
     try:
-        if 'batch_result' not in session:
-            return jsonify({'error': 'Không có dữ liệu để export'}), 400
+        if not prediction_history:
+            return jsonify({'error': 'Chưa có dữ liệu để export'}), 400
         
-        # Load results from session
-        df_result = pd.read_json(session['batch_result'], orient='records')
+        # Prepare data
+        data = []
+        for entry in prediction_history:
+            row = entry['customer_data'].copy()
+            row.update(entry['result'])
+            data.append(row)
+        
+        df = pd.DataFrame(data)
         
         if format == 'csv':
-            # Export to CSV
             output = io.StringIO()
-            df_result.to_csv(output, index=False, encoding='utf-8')
+            df.to_csv(output, index=False, encoding='utf-8-sig')
             output.seek(0)
             
             return send_file(
-                io.BytesIO(output.getvalue().encode('utf-8')),
+                io.BytesIO(output.getvalue().encode('utf-8-sig')),
                 mimetype='text/csv',
                 as_attachment=True,
                 download_name=f'churn_predictions_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
             )
         
         elif format == 'json':
-            # Export to JSON
-            output = df_result.to_json(orient='records', indent=2)
+            output = io.StringIO()
+            df.to_json(output, orient='records', indent=2)
+            output.seek(0)
             
             return send_file(
-                io.BytesIO(output.encode('utf-8')),
+                io.BytesIO(output.getvalue().encode('utf-8')),
                 mimetype='application/json',
                 as_attachment=True,
                 download_name=f'churn_predictions_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
             )
         
         else:
-            return jsonify({'error': 'Format không hỗ trợ'}), 400
+            return jsonify({'error': 'Format không hợp lệ'}), 400
         
     except Exception as e:
         logger.error(f"Error in /export: {str(e)}")
@@ -395,10 +417,20 @@ def export(format):
 def api_predict():
     """RESTful API endpoint for prediction"""
     try:
+        # Check if model is loaded
+        if model_info is None:
+            return jsonify({
+                'success': False,
+                'error': 'Model chưa được load. Vui lòng kiểm tra cấu hình server.'
+            }), 503
+        
         data = request.get_json()
         
         if not data:
-            return jsonify({'error': 'No data provided'}), 400
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
         
         # Predict
         result = predict_single(data)
@@ -410,6 +442,7 @@ def api_predict():
         
     except Exception as e:
         logger.error(f"Error in /api/predict: {str(e)}")
+        logger.error(traceback.format_exc())
         return jsonify({
             'success': False,
             'error': str(e)
@@ -428,25 +461,28 @@ def api_health():
 
 @app.errorhandler(404)
 def not_found(e):
+    """Handle 404 errors"""
     return render_template('error.html', error='Trang không tồn tại'), 404
 
 @app.errorhandler(500)
-def internal_error(e):
-    logger.error(f"Internal server error: {str(e)}")
+def server_error(e):
+    """Handle 500 errors"""
     return render_template('error.html', error='Lỗi server nội bộ'), 500
+
+@app.errorhandler(413)
+def file_too_large(e):
+    """Handle file too large error"""
+    return jsonify({'error': 'File quá lớn'}), 413
 
 # ========== MAIN ==========
 
 if __name__ == '__main__':
-    port = int(os.getenv('PORT', config['app']['port']))
-    debug = os.getenv('DEBUG', 'False') == 'True'
+    port = int(os.getenv('PORT', 5000))
+    debug = os.getenv('DEBUG', 'false').lower() == 'true'
     
-    logger.info(f"🚀 Starting FPTPlay Churn Prediction App on port {port}")
-    logger.info(f"   Debug mode: {debug}")
-    logger.info(f"   Model: {model_info['model_name'] if model_info else 'Not loaded'}")
+    logger.info(f"🚀 Starting FPTPlay Churn Prediction App")
+    logger.info(f"   Port: {port}")
+    logger.info(f"   Debug: {debug}")
+    logger.info(f"   Model: {'Loaded ✅' if model_info else 'Not Loaded ❌'}")
     
-    app.run(
-        host='0.0.0.0',
-        port=port,
-        debug=debug
-    )
+    app.run(host='0.0.0.0', port=port, debug=debug)
