@@ -1,10 +1,13 @@
 services:
   - type: web
-    name: fptplay-churn-api
+    name: fptplay-churn-api-v2
     env: python
     region: singapore
     plan: free
-    buildCommand: pip install --upgrade pip setuptools wheel && pip install --only-binary=:all: -r requirements.txt
+    buildCommand: |
+      pip install --upgrade pip
+      pip install setuptools wheel
+      pip install -r requirements.txt
     startCommand: gunicorn --workers 2 --bind 0.0.0.0:$PORT app:app --timeout 120
     envVars:
       - key: SECRET_KEY
