@@ -6,7 +6,7 @@ flask-cors==4.0.0
 pandas==2.0.3
 numpy==1.24.3
 
-# Machine Learning (MUST match model training version)
+# Machine Learning (MUST match model training version 1.3.0)
 scikit-learn==1.3.2
 joblib==1.3.2
 
