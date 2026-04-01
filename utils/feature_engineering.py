@@ -107,6 +107,53 @@ def feature_engineering(df):
     df_eng['REGION_CENTRAL'] = (df_eng['region'] == 'central').astype(int)
     df_eng['REGION_SOUTH'] = (df_eng['region'] == 'south').astype(int)
     
+    # ========== HIGH VALUE SCORE (CRITICAL - REQUIRED BY MODEL) ==========
+    """
+    HIGH_VALUE_SCORE: Composite metric to identify high-value customers
+    
+    Components:
+    1. Usage Score (40%): Based on average viewing hours (L6M)
+    2. Tenure Score (30%): Based on tenure_months (loyalty indicator)
+    3. Plan Score (20%): Premium plan = higher value
+    4. Promo Score (10%): Non-promo subscribers = higher value (paying customers)
+    
+    Score Range: 0-100
+    - >70: High-value customer
+    - 40-70: Medium-value customer
+    - <40: Low-value customer
+    """
+    
+    # 1. Usage Score (0-40 points)
+    # Normalize viewing hours to 0-40 scale
+    # Assume max viewing = 200 hours/month (very active user)
+    usage_score = (df_eng['AVG_L6M_HOURS'] / 200.0) * 40
+    usage_score = usage_score.clip(upper=40)
+    
+    # 2. Tenure Score (0-30 points)
+    # Normalize tenure to 0-30 scale
+    # Assume max meaningful tenure = 60 months (5 years)
+    tenure_score = (df_eng['tenure_months'] / 60.0) * 30
+    tenure_score = tenure_score.clip(upper=30)
+    
+    # 3. Plan Score (0-20 points)
+    # Premium: 20, Standard: 12, Basic: 5
+    plan_score = (
+        df_eng['PLAN_PREMIUM'] * 20 +
+        df_eng['PLAN_STANDARD'] * 12 +
+        df_eng['PLAN_BASIC'] * 5
+    )
+    
+    # 4. Promo Score (0-10 points)
+    # Non-promo (paying customer): 10, Promo: 3
+    promo_score = np.where(df_eng['is_promo_subscriber'] == 1, 3, 10)
+    
+    # Combine scores
+    df_eng['HIGH_VALUE_SCORE'] = usage_score + tenure_score + plan_score + promo_score
+    
+    # Ensure score is in valid range [0, 100]
+    df_eng['HIGH_VALUE_SCORE'] = df_eng['HIGH_VALUE_SCORE'].clip(0, 100)
+    df_eng['HIGH_VALUE_SCORE'] = df_eng['HIGH_VALUE_SCORE'].fillna(0)
+    
     return df_eng
 
 
@@ -156,14 +203,3 @@ def validate_input(data):
             return False, f"region must be one of {valid_regions}"
     
     return True, ""
-
-
-def get_feature_names():
-    """Return list of all engineered feature names"""
-    return [
-        'hours_m6', 'trend_slope_abs', 'is_promo_subscriber', 'tenure_months',
-        'STDDEV_L3M_HOURS', 'GROWTH_RATE_L1M_VS_L3M', 'GROWTH_RATE_L3M_VS_L6M',
-        'PREDICTED_VIEWING_DROP_PCT', 'CV_L3M_HOURS', 'DEVICE_MOBILE',
-        'DEVICE_TV', 'DEVICE_WEB', 'PLAN_BASIC', 'PLAN_STANDARD',
-        'PLAN_PREMIUM', 'REGION_NORTH', 'REGION_CENTRAL', 'REGION_SOUTH', 'trend_slope'
-    ]
